@@ -1,0 +1,412 @@
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ============================================================================
+// ENUMS
+// ============================================================================
+
+enum RoleType {
+  regular
+  cashier
+  manager
+  superuser
+}
+
+enum TransactionType {
+  purchase
+  redemption
+  adjustment
+  event
+  transfer
+}
+
+enum TransactionStatus {
+  draft
+  pending_verification
+  approved
+  rejected
+  posted
+  cancelled
+}
+
+enum PromotionType {
+  automatic
+  onetime
+}
+
+enum PromotionStatus {
+  active
+  inactive
+  archived
+}
+
+enum LedgerEntryKind {
+  earn_purchase
+  earn_event
+  adjustment_credit
+  adjustment_debit
+  redeem
+  transfer_out
+  transfer_in
+}
+
+enum RSVPStatus {
+  invited
+  yes
+  no
+  waitlisted
+}
+
+enum AttendanceStatus {
+  pending
+  confirmed
+  rejected
+}
+
+// ============================================================================
+// USER & AUTHENTICATION
+// ============================================================================
+
+model User {
+  id                 Int      @id @default(autoincrement())
+  email              String   @unique
+  username           String   @unique
+  passwordHash       String
+  name               String?
+  isActivated        Boolean  @default(false)
+  isStudentVerified  Boolean  @default(false)
+  isSuspicious       Boolean  @default(false)
+  tokenVersion       Int      @default(0)
+  lastLogin          DateTime?
+  birthday           DateTime?
+  avatarUrl          String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  // Relationships
+  roles                     UserRole[]
+  account                   LoyaltyAccount?
+  activationTokens          ActivationToken[]
+  passwordResetTokens       PasswordResetToken[]
+  createdTransactions       Transaction[]              @relation("TxCreatedBy")
+  cashierTransactions       Transaction[]              @relation("TxCashier")
+  managerTransactions       Transaction[]              @relation("TxManager")
+  ledgerEntriesPosted       LedgerEntry[]
+  verificationDecisions     TransactionVerification[]
+  createdPromotions         Promotion[]
+  singleUseRedemptions      SingleUseRedemption[]
+  createdEvents             Event[]
+  eventOrganizers           EventOrganizer[]
+  eventRSVPs                EventRSVP[]
+  eventRSVPsConfirmed       EventRSVP[]                @relation("RSVPConfirmedBy")
+  eventAwards               EventAward[]
+
+  @@index([email])
+}
+
+model ActivationToken {
+  id        Int       @id @default(autoincrement())
+  userId    Int
+  token     String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([token])
+}
+
+model PasswordResetToken {
+  id        Int       @id @default(autoincrement())
+  userId    Int
+  token     String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([token])
+}
+
+// ============================================================================
+// RBAC SYSTEM
+// ============================================================================
+
+model Role {
+  id          Int    @id @default(autoincrement())
+  name        String @unique
+  description String?
+
+  users            UserRole[]
+  permissions      RolePermission[]
+  ancestorOf       RoleHierarchy[]  @relation("RoleAncestor")
+  descendantOf     RoleHierarchy[]  @relation("RoleDescendant")
+}
+
+model Permission {
+  id          Int    @id @default(autoincrement())
+  name        String @unique
+  description String?
+
+  roles RolePermission[]
+}
+
+model UserRole {
+  userId Int
+  roleId Int
+
+  user User @relation(fields: [userId], references: [id])
+  role Role @relation(fields: [roleId], references: [id])
+
+  @@id([userId, roleId])
+  @@index([roleId])
+}
+
+model RolePermission {
+  roleId       Int
+  permissionId Int
+
+  role       Role       @relation(fields: [roleId], references: [id])
+  permission Permission @relation(fields: [permissionId], references: [id])
+
+  @@id([roleId, permissionId])
+  @@index([permissionId])
+}
+
+model RoleHierarchy {
+  ancestorId   Int
+  descendantId Int
+
+  ancestor   Role @relation("RoleAncestor", fields: [ancestorId], references: [id])
+  descendant Role @relation("RoleDescendant", fields: [descendantId], references: [id])
+
+  @@id([ancestorId, descendantId])
+  @@index([descendantId])
+}
+
+// ============================================================================
+// LOYALTY ACCOUNT & LEDGER
+// ============================================================================
+
+model LoyaltyAccount {
+  id           Int      @id @default(autoincrement())
+  userId       Int      @unique
+  pointsCached Int      @default(0)
+  createdAt    DateTime @default(now())
+
+  user              User           @relation(fields: [userId], references: [id])
+  entries           LedgerEntry[]
+  transactions      Transaction[]
+  transfersReceived Transaction[]  @relation("TxTransferTo")
+  eventAwards       EventAward[]
+}
+
+model LedgerEntry {
+  id             Int             @id @default(autoincrement())
+  accountId      Int
+  transactionId  Int
+  kind           LedgerEntryKind
+  pointsDelta    Int
+  occurredAt     DateTime        @default(now())
+  postedByUserId Int
+  note           String?
+
+  account  LoyaltyAccount @relation(fields: [accountId], references: [id])
+  postedBy User           @relation(fields: [postedByUserId], references: [id])
+
+  @@index([accountId, occurredAt])
+  @@index([transactionId])
+}
+
+// ============================================================================
+// TRANSACTIONS
+// ============================================================================
+
+model Transaction {
+  id                   Int               @id @default(autoincrement())
+  type                 TransactionType
+  status               TransactionStatus
+  createdAt            DateTime          @default(now())
+  createdByUserId      Int
+  accountId            Int
+  cashierId            Int?
+  managerId            Int?
+  decidedAt            DateTime?
+  currency             String?
+  subtotalCents        Int?
+  discountCents        Int?
+  totalCents           Int?
+  pointsCalculated     Int?
+  pointsPosted         Int?
+  transferToAccountId  Int?
+  adjustsTransactionId Int?
+  eventAwardId         Int?
+  idempotencyKey       String?           @unique
+  notes                String?
+
+  createdBy          User                      @relation("TxCreatedBy", fields: [createdByUserId], references: [id])
+  account            LoyaltyAccount            @relation(fields: [accountId], references: [id])
+  cashier            User?                     @relation("TxCashier", fields: [cashierId], references: [id])
+  manager            User?                     @relation("TxManager", fields: [managerId], references: [id])
+  transferTo         LoyaltyAccount?           @relation("TxTransferTo", fields: [transferToAccountId], references: [id])
+  adjustsTransaction Transaction?              @relation("Adjusts", fields: [adjustsTransactionId], references: [id])
+  adjustments        Transaction[]             @relation("Adjusts")
+  eventAward         EventAward?               @relation(fields: [eventAwardId], references: [id])
+  promosApplied      TransactionPromotion[]
+  verifications      TransactionVerification[]
+
+  @@index([type, status])
+  @@index([cashierId])
+  @@index([managerId])
+  @@index([accountId])
+}
+
+model TransactionVerification {
+  id            Int      @id @default(autoincrement())
+  transactionId Int
+  decidedById   Int
+  decision      String
+  reason        String?
+  decidedAt     DateTime @default(now())
+
+  transaction Transaction @relation(fields: [transactionId], references: [id])
+  decidedBy   User        @relation(fields: [decidedById], references: [id])
+
+  @@index([transactionId])
+}
+
+// ============================================================================
+// PROMOTIONS
+// ============================================================================
+
+model Promotion {
+  id                      Int             @id @default(autoincrement())
+  kind                    PromotionType
+  status                  PromotionStatus @default(active)
+  name                    String
+  description             String?
+  startsAt                DateTime?
+  endsAt                  DateTime?
+  minSpendCents           Int?
+  pointsPerCentMultiplier Float?
+  pointsBonus             Int?
+  offerCode               String?         @unique
+  createdById             Int
+  createdAt               DateTime        @default(now())
+  updatedAt               DateTime        @updatedAt
+
+  createdBy           User                   @relation(fields: [createdById], references: [id])
+  transactionsApplied TransactionPromotion[]
+  redemptions         SingleUseRedemption[]
+
+  @@index([status])
+  @@index([kind])
+}
+
+model TransactionPromotion {
+  transactionId Int
+  promotionId   Int
+  appliedAt     DateTime @default(now())
+  pointsDelta   Int?
+
+  transaction Transaction @relation(fields: [transactionId], references: [id])
+  promotion   Promotion   @relation(fields: [promotionId], references: [id])
+
+  @@id([transactionId, promotionId])
+}
+
+model SingleUseRedemption {
+  id          Int       @id @default(autoincrement())
+  promotionId Int
+  userId      Int
+  usedAt      DateTime?
+  usedInTxId  Int?
+
+  promotion Promotion @relation(fields: [promotionId], references: [id])
+  user      User      @relation(fields: [userId], references: [id])
+
+  @@unique([promotionId, userId])
+  @@index([userId])
+}
+
+// ============================================================================
+// EVENTS
+// ============================================================================
+
+model Event {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+  location    String?
+  startsAt    DateTime
+  endsAt      DateTime
+  capacity    Int?
+  pointsPool  Int
+  published   Boolean  @default(false)
+  createdById Int
+  createdAt   DateTime @default(now())
+
+  createdBy  User             @relation(fields: [createdById], references: [id])
+  organizers EventOrganizer[]
+  rsvps      EventRSVP[]
+  awards     EventAward[]
+}
+
+model EventOrganizer {
+  eventId Int
+  userId  Int
+
+  event Event @relation(fields: [eventId], references: [id])
+  user  User  @relation(fields: [userId], references: [id])
+
+  @@id([eventId, userId])
+  @@index([userId])
+}
+
+model EventRSVP {
+  id            Int              @id @default(autoincrement())
+  eventId       Int
+  userId        Int
+  status        RSVPStatus       @default(yes)
+  attendance    AttendanceStatus @default(pending)
+  confirmedById Int?
+  confirmedAt   DateTime?
+
+  event       Event        @relation(fields: [eventId], references: [id])
+  user        User         @relation(fields: [userId], references: [id])
+  confirmedBy User?        @relation("RSVPConfirmedBy", fields: [confirmedById], references: [id])
+  awards      EventAward[]
+
+  @@unique([eventId, userId])
+  @@index([userId])
+}
+
+model EventAward {
+  id          Int      @id @default(autoincrement())
+  eventId     Int
+  rsvpId      Int
+  accountId   Int
+  points      Int
+  awardedById Int
+  awardedAt   DateTime @default(now())
+
+  event        Event           @relation(fields: [eventId], references: [id])
+  rsvp         EventRSVP       @relation(fields: [rsvpId], references: [id])
+  account      LoyaltyAccount  @relation(fields: [accountId], references: [id])
+  awardedBy    User            @relation(fields: [awardedById], references: [id])
+  transactions Transaction[]
+
+  @@index([eventId])
+  @@index([rsvpId])
+  @@index([accountId])
+}
