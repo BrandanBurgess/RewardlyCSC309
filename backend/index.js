@@ -19,8 +19,15 @@ const port = (() => {
 })();
 
 const express = require("express");
+const cors = require("cors");
 const { bootstrap } = require('./src/utils/bootstrap');
 const app = express();
+
+// Enable CORS for frontend
+app.use(cors({
+    origin: 'http://localhost:5173', // Vite dev server
+    credentials: true
+}));
 
 app.use(express.json());
 

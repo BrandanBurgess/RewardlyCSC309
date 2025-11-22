@@ -2,20 +2,50 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import rewardlyLogo from '@/assets/rewardly_cropped.png'
+import { authAPI } from '@/services/api'
+import { saveAuth } from '@/utils/auth'
 
 const LandingPage = () => {
   const [isLogin, setIsLogin] = useState(true)
   const [formData, setFormData] = useState({
-    email: '',
+    utorid: '',
     password: '',
     confirmPassword: '',
     name: ''
   })
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [success, setSuccess] = useState(false)
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    // TODO: Implement login/signup logic
-    console.log('Form submitted:', formData)
+    setError('')
+    setLoading(true)
+
+    try {
+      if (isLogin) {
+        // Login
+        const response = await authAPI.login(formData.utorid, formData.password)
+        
+        // Save token and user data
+        saveAuth(response.token, response.user)
+        
+        // Set success state
+        setSuccess(true)
+        
+        // TODO: Redirect to dashboard or main app
+        console.log('Login successful:', response)
+        alert('Login successful! Welcome ' + response.user.name)
+      } else {
+        // Signup - TODO: Need to implement user creation endpoint
+        setError('Signup is not yet implemented. Please contact an administrator.')
+      }
+    } catch (err) {
+      console.error('Authentication error:', err)
+      setError(err.message || 'Authentication failed. Please try again.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleChange = (e) => {
@@ -23,6 +53,8 @@ const LandingPage = () => {
       ...formData,
       [e.target.name]: e.target.value
     })
+    // Clear error when user starts typing
+    if (error) setError('')
   }
 
   return (
@@ -59,6 +91,16 @@ const LandingPage = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {error && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                {error}
+              </div>
+            )}
+            {success && (
+              <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm">
+                Login successful! Redirecting...
+              </div>
+            )}
             <form onSubmit={handleSubmit} className="space-y-4">
               {!isLogin && (
                 <div>
@@ -83,20 +125,21 @@ const LandingPage = () => {
               
               <div>
                 <label 
-                  htmlFor="email" 
+                  htmlFor="utorid" 
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Email Address
+                  UTORid
                 </label>
                 <input
-                  id="email"
-                  name="email"
-                  type="email"
+                  id="utorid"
+                  name="utorid"
+                  type="text"
                   required
-                  value={formData.email}
+                  value={formData.utorid}
                   onChange={handleChange}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rewardly-blue focus:border-transparent transition-all"
-                  placeholder="you@example.com"
+                  placeholder="your_utorid"
+                  disabled={loading || success}
                 />
               </div>
               
@@ -116,6 +159,7 @@ const LandingPage = () => {
                   onChange={handleChange}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rewardly-blue focus:border-transparent transition-all"
                   placeholder="••••••••"
+                  disabled={loading || success}
                 />
               </div>
 
@@ -169,8 +213,9 @@ const LandingPage = () => {
                 type="submit" 
                 className="w-full" 
                 size="lg"
+                disabled={loading || success}
               >
-                {isLogin ? 'Sign In' : 'Create Account'}
+                {loading ? 'Please wait...' : (isLogin ? 'Sign In' : 'Create Account')}
               </Button>
             </form>
 
