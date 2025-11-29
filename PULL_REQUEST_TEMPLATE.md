@@ -2,7 +2,7 @@
 
 Provide a concise summary of what this PR changes and why the change is needed.
 
-- High-level overview of the approach taken.
+- 
 
 ---
 
