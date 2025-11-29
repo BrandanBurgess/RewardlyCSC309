@@ -1,0 +1,50 @@
+name: Full Stack CI
+
+on:
+  pull_request:
+    branches: ["main"]
+  push:
+    branches: ["main"]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [20]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      # ------------------------------------------------------
+      # BACKEND
+      # ------------------------------------------------------
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm install
+
+      - name: Generate Prisma Client
+        working-directory: backend
+        run: npx prisma generate
+
+      - name: Backend syntax check
+        working-directory: backend
+        run: node --check index.js
+
+      # ------------------------------------------------------
+      # FRONTEND
+      # ------------------------------------------------------
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm install
+
+      - name: Frontend build
+        working-directory: frontend
+        run: npm run build
