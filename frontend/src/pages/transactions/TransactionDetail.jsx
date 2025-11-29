@@ -4,37 +4,31 @@ import { PageHeader } from '@/components/layout'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft, User, Calendar, Hash, FileText, Tag, AlertTriangle } from 'lucide-react'
-
-// ============================================================
-// TODO: Replace mock data imports with API calls
-// ============================================================
-import { mockTransactions, simulateApiDelay } from '@/mock'
+import { transactionAPI } from '@/api/transactions'
 
 const TransactionDetail = () => {
   const { id } = useParams()
   const [loading, setLoading] = useState(true)
   const [transaction, setTransaction] = useState(null)
+  const [error, setError] = useState(null)
 
   useEffect(() => {
     loadTransaction()
   }, [id])
 
-  // ============================================================
-  // TODO: Replace with actual API call
-  // Example:
-  //   const response = await transactionAPI.getById(id)
-  //   setTransaction(response)
-  // ============================================================
   const loadTransaction = async () => {
     setLoading(true)
+    setError(null)
     try {
-      await simulateApiDelay(300) // Remove this when using real API
-      
-      // TODO: Replace with actual API call
-      const found = mockTransactions.find(t => t.id === parseInt(id))
-      setTransaction(found || null)
-    } catch (error) {
-      console.error('Failed to load transaction:', error)
+      const tx = await transactionAPI.getById(id)
+      if (!tx) {
+        setError('Transaction not found')
+      } else {
+        setTransaction(tx)
+      }
+    } catch (err) {
+      console.error('Failed to load transaction:', err)
+      setError(err.message || 'Failed to load transaction')
     } finally {
       setLoading(false)
     }
@@ -59,10 +53,10 @@ const TransactionDetail = () => {
     )
   }
 
-  if (!transaction) {
+  if (error || !transaction) {
     return (
       <div className="text-center py-12">
-        <p className="text-gray-500">Transaction not found</p>
+        <p className="text-gray-500">{error || 'Transaction not found'}</p>
         <Link to="/transactions">
           <Button variant="outline" className="mt-4">Back to Transactions</Button>
         </Link>
@@ -126,13 +120,13 @@ const TransactionDetail = () => {
                   <User className="h-4 w-4" />
                   Created By
                 </label>
-                <p className="text-gray-900">{transaction.createdBy}</p>
+                <p className="text-gray-900">{transaction.createdBy || 'System'}</p>
               </div>
               
               <div className="space-y-1">
                 <label className="text-sm font-medium text-gray-500 flex items-center gap-2">
                   <User className="h-4 w-4" />
-                  Related User
+                  Related User/Entity
                 </label>
                 <p className="text-gray-900">{transaction.relatedId || '—'}</p>
               </div>
@@ -177,6 +171,25 @@ const TransactionDetail = () => {
                 </div>
               </div>
             )}
+
+            {transaction.type === 'redemption' && (
+              <div className={`p-4 rounded-lg flex items-center gap-3 ${
+                transaction.processedAt 
+                  ? 'bg-green-50 border border-green-200' 
+                  : 'bg-orange-50 border border-orange-200'
+              }`}>
+                <div>
+                  <p className={`font-medium ${transaction.processedAt ? 'text-green-700' : 'text-orange-700'}`}>
+                    {transaction.processedAt ? 'Processed' : 'Pending Processing'}
+                  </p>
+                  <p className={`text-sm ${transaction.processedAt ? 'text-green-600' : 'text-orange-600'}`}>
+                    {transaction.processedAt 
+                      ? `Processed on ${new Date(transaction.processedAt).toLocaleString()}`
+                      : 'This redemption is awaiting cashier processing'}
+                  </p>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -197,7 +210,7 @@ const TransactionDetail = () => {
               <div className="border-t pt-4 mt-4">
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500">Amount Spent</span>
-                  <span className="font-medium">${transaction.spent.toFixed(2)}</span>
+                  <span className="font-medium">${parseFloat(transaction.spent).toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-sm mt-2">
                   <span className="text-gray-500">Points Rate</span>

@@ -14,49 +14,77 @@ import {
   Send
 } from 'lucide-react'
 import { getUser } from '@/utils/auth'
+import { userAPI } from '@/api/api'
+import { transactionAPI } from '@/api/transactions'
 
-// ============================================================
-// TODO: Replace mock data imports with API calls
-// ============================================================
-import { 
-  mockDashboardStats, 
-  mockRecentTransactions, 
-  mockUpcomingEvents,
-  simulateApiDelay 
-} from '@/mock'
+// Mock data for events (Package 3 will replace this)
+import { mockUpcomingEvents } from '@/mock'
 
 const Dashboard = () => {
-  const user = getUser()
+  const [user, setUser] = useState(getUser())
   const [loading, setLoading] = useState(true)
-  const [stats, setStats] = useState(null)
   const [recentTransactions, setRecentTransactions] = useState([])
   const [upcomingEvents, setUpcomingEvents] = useState([])
+  const [stats, setStats] = useState({
+    points: 0,
+    pendingRedemptions: 0,
+    transactionsThisMonth: 0,
+    upcomingEvents: 0
+  })
 
   useEffect(() => {
     loadDashboardData()
   }, [])
 
-  // ============================================================
-  // TODO: Replace with actual API calls
-  // Example:
-  //   const statsResponse = await dashboardAPI.getStats()
-  //   const transactionsResponse = await transactionAPI.getRecent(3)
-  //   const eventsResponse = await eventAPI.getUpcoming(2)
-  // ============================================================
   const loadDashboardData = async () => {
     setLoading(true)
     try {
-      await simulateApiDelay(300) // Remove this when using real API
+      // Fetch fresh user profile for accurate points
+      const userProfile = await userAPI.getProfile()
+      setUser(userProfile)
+
+      // Fetch user's transactions
+      const transactionsResponse = await transactionAPI.getMyTransactions({ limit: 5 })
+      const transactions = transactionsResponse.results || transactionsResponse || []
       
-      // TODO: Replace these with actual API calls
-      setStats({
-        ...mockDashboardStats,
-        points: user?.points || mockDashboardStats.points
+      // Format transactions for display
+      const formattedTransactions = transactions.slice(0, 3).map(tx => ({
+        id: tx.id,
+        type: tx.type,
+        amount: tx.amount,
+        description: tx.remark || `${tx.type.charAt(0).toUpperCase() + tx.type.slice(1)} transaction`,
+        date: new Date(tx.createdAt).toLocaleDateString()
+      }))
+      setRecentTransactions(formattedTransactions)
+
+      // Calculate stats from transactions
+      const now = new Date()
+      const thisMonth = transactions.filter(tx => {
+        const txDate = new Date(tx.createdAt)
+        return txDate.getMonth() === now.getMonth() && txDate.getFullYear() === now.getFullYear()
       })
-      setRecentTransactions(mockRecentTransactions)
+      
+      const pendingRedemptions = transactions.filter(
+        tx => tx.type === 'redemption' && !tx.processedAt
+      ).length
+
+      setStats({
+        points: userProfile.points || 0,
+        pendingRedemptions,
+        transactionsThisMonth: thisMonth.length,
+        upcomingEvents: mockUpcomingEvents.length // TODO: Replace with real events API (Package 3)
+      })
+
+      // TODO: Replace with real events API (Package 3)
       setUpcomingEvents(mockUpcomingEvents)
+
     } catch (error) {
       console.error('Failed to load dashboard data:', error)
+      // Fallback to cached user data
+      setStats(prev => ({
+        ...prev,
+        points: user?.points || 0
+      }))
     } finally {
       setLoading(false)
     }
@@ -92,27 +120,25 @@ const Dashboard = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <StatsCard
           title="Available Points"
-          value={stats?.points?.toLocaleString() || 0}
+          value={stats.points.toLocaleString()}
           icon={Coins}
           variant="primary"
-          trend="up"
-          trendValue="+12% this month"
         />
         <StatsCard
           title="Pending Redemptions"
-          value={stats?.pendingRedemptions || 0}
+          value={stats.pendingRedemptions}
           icon={Gift}
           subtitle="Awaiting processing"
         />
         <StatsCard
           title="Transactions"
-          value={stats?.transactionsThisMonth || 0}
+          value={stats.transactionsThisMonth}
           icon={Receipt}
           subtitle="This month"
         />
         <StatsCard
           title="Upcoming Events"
-          value={stats?.upcomingEvents || 0}
+          value={stats.upcomingEvents}
           icon={Calendar}
           subtitle="RSVP'd events"
         />
@@ -182,24 +208,28 @@ const Dashboard = () => {
             </Link>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {recentTransactions.map((tx) => (
-                <div key={tx.id} className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
-                  <div className="flex items-center gap-3">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium capitalize ${getTransactionColor(tx.type)}`}>
-                      {tx.type}
-                    </span>
-                    <div>
-                      <p className="font-medium text-gray-900">{tx.description}</p>
-                      <p className="text-sm text-gray-500">{tx.date}</p>
+            {recentTransactions.length === 0 ? (
+              <p className="text-gray-500 text-center py-4">No transactions yet</p>
+            ) : (
+              <div className="space-y-4">
+                {recentTransactions.map((tx) => (
+                  <div key={tx.id} className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
+                    <div className="flex items-center gap-3">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium capitalize ${getTransactionColor(tx.type)}`}>
+                        {tx.type}
+                      </span>
+                      <div>
+                        <p className="font-medium text-gray-900">{tx.description}</p>
+                        <p className="text-sm text-gray-500">{tx.date}</p>
+                      </div>
                     </div>
+                    <span className={`font-semibold ${tx.amount > 0 ? 'text-green-600' : 'text-gray-600'}`}>
+                      {tx.amount > 0 ? '+' : ''}{tx.amount} pts
+                    </span>
                   </div>
-                  <span className={`font-semibold ${tx.amount > 0 ? 'text-green-600' : 'text-gray-600'}`}>
-                    {tx.amount > 0 ? '+' : ''}{tx.amount} pts
-                  </span>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -214,24 +244,28 @@ const Dashboard = () => {
             </Link>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {upcomingEvents.map((event) => (
-                <div key={event.id} className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-lg bg-purple-100 flex items-center justify-center">
-                      <Calendar className="h-5 w-5 text-purple-600" />
+            {upcomingEvents.length === 0 ? (
+              <p className="text-gray-500 text-center py-4">No upcoming events</p>
+            ) : (
+              <div className="space-y-4">
+                {upcomingEvents.map((event) => (
+                  <div key={event.id} className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-lg bg-purple-100 flex items-center justify-center">
+                        <Calendar className="h-5 w-5 text-purple-600" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-900">{event.name}</p>
+                        <p className="text-sm text-gray-500">{event.date}</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-medium text-gray-900">{event.name}</p>
-                      <p className="text-sm text-gray-500">{event.date}</p>
-                    </div>
+                    <span className="text-sm font-medium text-rewardly-blue">
+                      +{event.points} pts
+                    </span>
                   </div>
-                  <span className="text-sm font-medium text-rewardly-blue">
-                    +{event.points} pts
-                  </span>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
