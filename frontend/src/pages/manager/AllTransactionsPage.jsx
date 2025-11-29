@@ -1,21 +1,80 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { PageHeader } from '@/components/layout'
 import { DataTable } from '@/components/shared'
 import { Link } from 'react-router-dom'
 import { Eye, AlertTriangle, Flag } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
+// ============================================================
+// TODO: Replace mock data imports with API calls
+// ============================================================
+import { 
+  mockTransactions, 
+  getMockPaginatedData,
+  simulateApiDelay,
+  PAGINATION_DEFAULTS 
+} from '@/mock'
+
 const AllTransactionsPage = () => {
   const [currentPage, setCurrentPage] = useState(1)
+  const [loading, setLoading] = useState(true)
+  const [transactions, setTransactions] = useState([])
+  const [totalPages, setTotalPages] = useState(1)
+  const [totalItems, setTotalItems] = useState(0)
+  const [filters, setFilters] = useState({
+    type: '',
+    userId: '',
+    createdBy: '',
+    suspicious: ''
+  })
 
-  // Mock data - will be replaced with real API calls
-  const transactions = [
-    { id: 1, type: 'purchase', amount: 150, userId: 'john_doe', createdBy: 'cashier1', suspicious: false, createdAt: '2025-11-28T10:30:00Z' },
-    { id: 2, type: 'transfer', amount: 50, userId: 'jane_smith', createdBy: 'john_doe', suspicious: false, createdAt: '2025-11-27T15:45:00Z' },
-    { id: 3, type: 'redemption', amount: -500, userId: 'bob_wilson', createdBy: 'bob_wilson', suspicious: true, createdAt: '2025-11-26T09:00:00Z' },
-    { id: 4, type: 'event', amount: 200, userId: 'alice_johnson', createdBy: 'manager1', suspicious: false, createdAt: '2025-11-25T14:00:00Z' },
-    { id: 5, type: 'adjustment', amount: -100, userId: 'charlie_brown', createdBy: 'admin', suspicious: false, createdAt: '2025-11-24T11:30:00Z' },
-  ]
+  useEffect(() => {
+    loadTransactions()
+  }, [currentPage, filters])
+
+  // ============================================================
+  // TODO: Replace with actual API call
+  // Example:
+  //   const response = await transactionAPI.getAll({
+  //     page: currentPage,
+  //     limit: PAGINATION_DEFAULTS.itemsPerPage,
+  //     type: filters.type,
+  //     userId: filters.userId,
+  //     createdBy: filters.createdBy,
+  //     suspicious: filters.suspicious
+  //   })
+  // ============================================================
+  const loadTransactions = async () => {
+    setLoading(true)
+    try {
+      await simulateApiDelay(300) // Remove this when using real API
+      
+      // TODO: Replace with actual API call
+      const { data, pagination } = getMockPaginatedData(
+        mockTransactions, 
+        currentPage, 
+        PAGINATION_DEFAULTS.itemsPerPage
+      )
+      
+      setTransactions(data)
+      setTotalPages(pagination.totalPages)
+      setTotalItems(pagination.totalItems)
+    } catch (error) {
+      console.error('Failed to load transactions:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // ============================================================
+  // TODO: Implement flag suspicious API call
+  // Example:
+  //   await transactionAPI.flagSuspicious(transactionId)
+  // ============================================================
+  const handleFlagSuspicious = async (transactionId) => {
+    console.log('TODO: Flag transaction as suspicious:', transactionId)
+    // TODO: Call API and reload
+  }
 
   const getTypeStyles = (type) => {
     const styles = {
@@ -97,7 +156,12 @@ const AllTransactionsPage = () => {
             </Button>
           </Link>
           {!row.suspicious && (
-            <Button variant="ghost" size="sm" className="gap-1 text-orange-500 hover:text-orange-700">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="gap-1 text-orange-500 hover:text-orange-700"
+              onClick={() => handleFlagSuspicious(row.id)}
+            >
               <Flag className="h-4 w-4" />
             </Button>
           )}
@@ -110,7 +174,11 @@ const AllTransactionsPage = () => {
     <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
-        <select className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+        <select 
+          value={filters.type}
+          onChange={(e) => setFilters({ ...filters, type: e.target.value })}
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+        >
           <option value="">All Types</option>
           <option value="purchase">Purchase</option>
           <option value="transfer">Transfer</option>
@@ -123,6 +191,8 @@ const AllTransactionsPage = () => {
         <label className="block text-sm font-medium text-gray-700 mb-1">User ID</label>
         <input
           type="text"
+          value={filters.userId}
+          onChange={(e) => setFilters({ ...filters, userId: e.target.value })}
           placeholder="UTORid"
           className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
         />
@@ -131,20 +201,30 @@ const AllTransactionsPage = () => {
         <label className="block text-sm font-medium text-gray-700 mb-1">Created By</label>
         <input
           type="text"
+          value={filters.createdBy}
+          onChange={(e) => setFilters({ ...filters, createdBy: e.target.value })}
           placeholder="UTORid"
           className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
         />
       </div>
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">Suspicious</label>
-        <select className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+        <select 
+          value={filters.suspicious}
+          onChange={(e) => setFilters({ ...filters, suspicious: e.target.value })}
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+        >
           <option value="">All</option>
           <option value="true">Suspicious Only</option>
           <option value="false">Not Suspicious</option>
         </select>
       </div>
       <div className="flex items-end">
-        <Button variant="outline" className="w-full">
+        <Button 
+          variant="outline" 
+          className="w-full"
+          onClick={() => setFilters({ type: '', userId: '', createdBy: '', suspicious: '' })}
+        >
           Clear
         </Button>
       </div>
@@ -166,13 +246,14 @@ const AllTransactionsPage = () => {
       <DataTable
         columns={columns}
         data={transactions}
+        loading={loading}
         searchable={true}
         searchPlaceholder="Search transactions..."
         pagination={true}
         currentPage={currentPage}
-        totalPages={5}
-        totalItems={50}
-        itemsPerPage={10}
+        totalPages={totalPages}
+        totalItems={totalItems}
+        itemsPerPage={PAGINATION_DEFAULTS.itemsPerPage}
         onPageChange={setCurrentPage}
         filters={filterPanel}
         emptyMessage="No transactions found"
@@ -182,4 +263,3 @@ const AllTransactionsPage = () => {
 }
 
 export default AllTransactionsPage
-

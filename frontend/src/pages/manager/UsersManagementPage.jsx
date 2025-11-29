@@ -1,21 +1,68 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { PageHeader } from '@/components/layout'
 import { DataTable } from '@/components/shared'
 import { Button } from '@/components/ui/button'
 import { Link } from 'react-router-dom'
-import { Eye, UserPlus, Shield, CheckCircle, XCircle } from 'lucide-react'
+import { Eye, UserPlus, CheckCircle, XCircle } from 'lucide-react'
+
+// ============================================================
+// TODO: Replace mock data imports with API calls
+// ============================================================
+import { 
+  mockUsers, 
+  getMockPaginatedData,
+  simulateApiDelay,
+  PAGINATION_DEFAULTS 
+} from '@/mock'
 
 const UsersManagementPage = () => {
   const [currentPage, setCurrentPage] = useState(1)
+  const [loading, setLoading] = useState(true)
+  const [users, setUsers] = useState([])
+  const [totalPages, setTotalPages] = useState(1)
+  const [totalItems, setTotalItems] = useState(0)
+  const [filters, setFilters] = useState({
+    role: '',
+    verified: '',
+    activated: ''
+  })
 
-  // Mock data - will be replaced with real API calls
-  const users = [
-    { id: 1, utorid: 'john_doe', name: 'John Doe', email: 'john@example.com', role: 'regular', verified: true, points: 1250, createdAt: '2025-10-15' },
-    { id: 2, utorid: 'jane_smith', name: 'Jane Smith', email: 'jane@example.com', role: 'cashier', verified: true, points: 850, createdAt: '2025-10-20' },
-    { id: 3, utorid: 'bob_wilson', name: 'Bob Wilson', email: 'bob@example.com', role: 'regular', verified: false, points: 0, createdAt: '2025-11-01' },
-    { id: 4, utorid: 'alice_johnson', name: 'Alice Johnson', email: 'alice@example.com', role: 'manager', verified: true, points: 2500, createdAt: '2025-09-01' },
-    { id: 5, utorid: 'charlie_brown', name: 'Charlie Brown', email: 'charlie@example.com', role: 'regular', verified: true, points: 500, createdAt: '2025-11-10' },
-  ]
+  useEffect(() => {
+    loadUsers()
+  }, [currentPage, filters])
+
+  // ============================================================
+  // TODO: Replace with actual API call
+  // Example:
+  //   const response = await userAPI.getAll({
+  //     page: currentPage,
+  //     limit: PAGINATION_DEFAULTS.itemsPerPage,
+  //     role: filters.role,
+  //     verified: filters.verified,
+  //     activated: filters.activated
+  //   })
+  // ============================================================
+  const loadUsers = async () => {
+    setLoading(true)
+    try {
+      await simulateApiDelay(300) // Remove this when using real API
+      
+      // TODO: Replace with actual API call
+      const { data, pagination } = getMockPaginatedData(
+        mockUsers, 
+        currentPage, 
+        PAGINATION_DEFAULTS.itemsPerPage
+      )
+      
+      setUsers(data)
+      setTotalPages(pagination.totalPages)
+      setTotalItems(pagination.totalItems)
+    } catch (error) {
+      console.error('Failed to load users:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const getRoleStyles = (role) => {
     const styles = {
@@ -94,7 +141,11 @@ const UsersManagementPage = () => {
     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
-        <select className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+        <select 
+          value={filters.role}
+          onChange={(e) => setFilters({ ...filters, role: e.target.value })}
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+        >
           <option value="">All Roles</option>
           <option value="regular">Regular</option>
           <option value="cashier">Cashier</option>
@@ -104,7 +155,11 @@ const UsersManagementPage = () => {
       </div>
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">Verified</label>
-        <select className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+        <select 
+          value={filters.verified}
+          onChange={(e) => setFilters({ ...filters, verified: e.target.value })}
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+        >
           <option value="">All</option>
           <option value="true">Verified</option>
           <option value="false">Not Verified</option>
@@ -112,14 +167,22 @@ const UsersManagementPage = () => {
       </div>
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">Activated</label>
-        <select className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+        <select 
+          value={filters.activated}
+          onChange={(e) => setFilters({ ...filters, activated: e.target.value })}
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+        >
           <option value="">All</option>
           <option value="true">Activated</option>
           <option value="false">Not Activated</option>
         </select>
       </div>
       <div className="flex items-end">
-        <Button variant="outline" className="w-full">
+        <Button 
+          variant="outline" 
+          className="w-full"
+          onClick={() => setFilters({ role: '', verified: '', activated: '' })}
+        >
           Clear Filters
         </Button>
       </div>
@@ -147,13 +210,14 @@ const UsersManagementPage = () => {
       <DataTable
         columns={columns}
         data={users}
+        loading={loading}
         searchable={true}
         searchPlaceholder="Search by name, email, or UTORid..."
         pagination={true}
         currentPage={currentPage}
-        totalPages={3}
-        totalItems={25}
-        itemsPerPage={10}
+        totalPages={totalPages}
+        totalItems={totalItems}
+        itemsPerPage={PAGINATION_DEFAULTS.itemsPerPage}
         onPageChange={setCurrentPage}
         filters={filterPanel}
         emptyMessage="No users found"
@@ -163,4 +227,3 @@ const UsersManagementPage = () => {
 }
 
 export default UsersManagementPage
-

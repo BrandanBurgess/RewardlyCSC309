@@ -1,20 +1,79 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { PageHeader } from '@/components/layout'
 import { DataTable } from '@/components/shared'
 import { Button } from '@/components/ui/button'
 import { Link } from 'react-router-dom'
 import { Eye, Plus, Edit2, Trash2, Users, CheckCircle, XCircle } from 'lucide-react'
 
+// ============================================================
+// TODO: Replace mock data imports with API calls
+// ============================================================
+import { 
+  mockEvents, 
+  getMockPaginatedData,
+  simulateApiDelay,
+  PAGINATION_DEFAULTS 
+} from '@/mock'
+
 const EventsManagementPage = () => {
   const [currentPage, setCurrentPage] = useState(1)
+  const [loading, setLoading] = useState(true)
+  const [events, setEvents] = useState([])
+  const [totalPages, setTotalPages] = useState(1)
+  const [totalItems, setTotalItems] = useState(0)
+  const [filters, setFilters] = useState({
+    published: '',
+    dateRange: '',
+    capacity: ''
+  })
 
-  // Mock data
-  const events = [
-    { id: 1, name: 'Tech Workshop: React Basics', location: 'Room BA1234', startTime: '2025-12-01T14:00:00Z', capacity: 50, numGuests: 35, published: true },
-    { id: 2, name: 'Holiday Party', location: 'Great Hall', startTime: '2025-12-15T18:00:00Z', capacity: 200, numGuests: 150, published: true },
-    { id: 3, name: 'Career Fair', location: 'Student Center', startTime: '2025-12-10T10:00:00Z', capacity: null, numGuests: 89, published: true },
-    { id: 4, name: 'Draft Event', location: 'TBD', startTime: '2025-12-20T12:00:00Z', capacity: 30, numGuests: 0, published: false },
-  ]
+  useEffect(() => {
+    loadEvents()
+  }, [currentPage, filters])
+
+  // ============================================================
+  // TODO: Replace with actual API call
+  // Example:
+  //   const response = await eventAPI.getAll({
+  //     page: currentPage,
+  //     limit: PAGINATION_DEFAULTS.itemsPerPage,
+  //     published: filters.published,
+  //     ...filters
+  //   })
+  // ============================================================
+  const loadEvents = async () => {
+    setLoading(true)
+    try {
+      await simulateApiDelay(300) // Remove this when using real API
+      
+      // TODO: Replace with actual API call
+      const { data, pagination } = getMockPaginatedData(
+        mockEvents, 
+        currentPage, 
+        PAGINATION_DEFAULTS.itemsPerPage
+      )
+      
+      setEvents(data)
+      setTotalPages(pagination.totalPages)
+      setTotalItems(pagination.totalItems)
+    } catch (error) {
+      console.error('Failed to load events:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // ============================================================
+  // TODO: Implement delete event API call
+  // Example:
+  //   await eventAPI.delete(eventId)
+  //   loadEvents() // Reload after delete
+  // ============================================================
+  const handleDelete = async (eventId) => {
+    if (!confirm('Are you sure you want to delete this event?')) return
+    console.log('TODO: Delete event:', eventId)
+    // TODO: Call API and reload
+  }
 
   const columns = [
     {
@@ -81,7 +140,12 @@ const EventsManagementPage = () => {
               <Users className="h-4 w-4" />
             </Button>
           </Link>
-          <Button variant="ghost" size="sm" className="text-red-500 hover:text-red-700">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="text-red-500 hover:text-red-700"
+            onClick={() => handleDelete(row.id)}
+          >
             <Trash2 className="h-4 w-4" />
           </Button>
         </div>
@@ -93,15 +157,23 @@ const EventsManagementPage = () => {
     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-        <select className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+        <select 
+          value={filters.published}
+          onChange={(e) => setFilters({ ...filters, published: e.target.value })}
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+        >
           <option value="">All</option>
-          <option value="published">Published</option>
-          <option value="draft">Draft</option>
+          <option value="true">Published</option>
+          <option value="false">Draft</option>
         </select>
       </div>
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">Date Range</label>
-        <select className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+        <select 
+          value={filters.dateRange}
+          onChange={(e) => setFilters({ ...filters, dateRange: e.target.value })}
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+        >
           <option value="">All Time</option>
           <option value="upcoming">Upcoming</option>
           <option value="past">Past</option>
@@ -109,14 +181,22 @@ const EventsManagementPage = () => {
       </div>
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">Capacity</label>
-        <select className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+        <select 
+          value={filters.capacity}
+          onChange={(e) => setFilters({ ...filters, capacity: e.target.value })}
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+        >
           <option value="">Any</option>
           <option value="available">Has Availability</option>
           <option value="full">Full</option>
         </select>
       </div>
       <div className="flex items-end">
-        <Button variant="outline" className="w-full">
+        <Button 
+          variant="outline" 
+          className="w-full"
+          onClick={() => setFilters({ published: '', dateRange: '', capacity: '' })}
+        >
           Clear
         </Button>
       </div>
@@ -146,13 +226,14 @@ const EventsManagementPage = () => {
       <DataTable
         columns={columns}
         data={events}
+        loading={loading}
         searchable={true}
         searchPlaceholder="Search events..."
         pagination={true}
         currentPage={currentPage}
-        totalPages={2}
-        totalItems={events.length}
-        itemsPerPage={10}
+        totalPages={totalPages}
+        totalItems={totalItems}
+        itemsPerPage={PAGINATION_DEFAULTS.itemsPerPage}
         onPageChange={setCurrentPage}
         filters={filterPanel}
         emptyMessage="No events found"
@@ -162,4 +243,3 @@ const EventsManagementPage = () => {
 }
 
 export default EventsManagementPage
-

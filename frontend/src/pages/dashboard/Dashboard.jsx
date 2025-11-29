@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import { PageHeader } from '@/components/layout'
 import { StatsCard } from '@/components/shared'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -8,34 +9,58 @@ import {
   Receipt, 
   Gift, 
   Calendar, 
-  TrendingUp, 
   ArrowRight,
   QrCode,
   Send
 } from 'lucide-react'
 import { getUser } from '@/utils/auth'
 
+// ============================================================
+// TODO: Replace mock data imports with API calls
+// ============================================================
+import { 
+  mockDashboardStats, 
+  mockRecentTransactions, 
+  mockUpcomingEvents,
+  simulateApiDelay 
+} from '@/mock'
+
 const Dashboard = () => {
   const user = getUser()
-  
-  // Mock data - will be replaced with real API calls
-  const stats = {
-    points: user?.points || 1250,
-    pendingRedemptions: 2,
-    transactionsThisMonth: 15,
-    upcomingEvents: 3
+  const [loading, setLoading] = useState(true)
+  const [stats, setStats] = useState(null)
+  const [recentTransactions, setRecentTransactions] = useState([])
+  const [upcomingEvents, setUpcomingEvents] = useState([])
+
+  useEffect(() => {
+    loadDashboardData()
+  }, [])
+
+  // ============================================================
+  // TODO: Replace with actual API calls
+  // Example:
+  //   const statsResponse = await dashboardAPI.getStats()
+  //   const transactionsResponse = await transactionAPI.getRecent(3)
+  //   const eventsResponse = await eventAPI.getUpcoming(2)
+  // ============================================================
+  const loadDashboardData = async () => {
+    setLoading(true)
+    try {
+      await simulateApiDelay(300) // Remove this when using real API
+      
+      // TODO: Replace these with actual API calls
+      setStats({
+        ...mockDashboardStats,
+        points: user?.points || mockDashboardStats.points
+      })
+      setRecentTransactions(mockRecentTransactions)
+      setUpcomingEvents(mockUpcomingEvents)
+    } catch (error) {
+      console.error('Failed to load dashboard data:', error)
+    } finally {
+      setLoading(false)
+    }
   }
-
-  const recentTransactions = [
-    { id: 1, type: 'purchase', amount: 150, date: '2025-11-28', description: 'Coffee purchase' },
-    { id: 2, type: 'transfer', amount: -50, date: '2025-11-27', description: 'Transfer to john_doe' },
-    { id: 3, type: 'event', amount: 200, date: '2025-11-26', description: 'Workshop attendance' },
-  ]
-
-  const upcomingEvents = [
-    { id: 1, name: 'Tech Workshop', date: '2025-12-01', points: 100 },
-    { id: 2, name: 'Holiday Party', date: '2025-12-15', points: 50 },
-  ]
 
   const getTransactionColor = (type) => {
     const colors = {
@@ -46,6 +71,14 @@ const Dashboard = () => {
       adjustment: 'bg-gray-100 text-gray-700',
     }
     return colors[type] || colors.adjustment
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-2 border-rewardly-blue border-t-transparent" />
+      </div>
+    )
   }
 
   return (
@@ -59,7 +92,7 @@ const Dashboard = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <StatsCard
           title="Available Points"
-          value={stats.points.toLocaleString()}
+          value={stats?.points?.toLocaleString() || 0}
           icon={Coins}
           variant="primary"
           trend="up"
@@ -67,19 +100,19 @@ const Dashboard = () => {
         />
         <StatsCard
           title="Pending Redemptions"
-          value={stats.pendingRedemptions}
+          value={stats?.pendingRedemptions || 0}
           icon={Gift}
           subtitle="Awaiting processing"
         />
         <StatsCard
           title="Transactions"
-          value={stats.transactionsThisMonth}
+          value={stats?.transactionsThisMonth || 0}
           icon={Receipt}
           subtitle="This month"
         />
         <StatsCard
           title="Upcoming Events"
-          value={stats.upcomingEvents}
+          value={stats?.upcomingEvents || 0}
           icon={Calendar}
           subtitle="RSVP'd events"
         />
@@ -207,4 +240,3 @@ const Dashboard = () => {
 }
 
 export default Dashboard
-

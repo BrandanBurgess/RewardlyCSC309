@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { PageHeader } from '@/components/layout'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -6,62 +6,70 @@ import { Pagination, EmptyState } from '@/components/shared'
 import { Link } from 'react-router-dom'
 import { Megaphone, Calendar, Tag, ArrowRight, Percent } from 'lucide-react'
 
+// ============================================================
+// TODO: Replace mock data imports with API calls
+// ============================================================
+import { 
+  mockPromotions, 
+  getMockPaginatedData,
+  simulateApiDelay,
+  PAGINATION_DEFAULTS 
+} from '@/mock'
+
 const PromotionsPage = () => {
   const [currentPage, setCurrentPage] = useState(1)
+  const [loading, setLoading] = useState(true)
+  const [promotions, setPromotions] = useState([])
+  const [totalPages, setTotalPages] = useState(1)
+  const [totalItems, setTotalItems] = useState(0)
 
-  // Mock data - will be replaced with real API calls
-  const promotions = [
-    {
-      id: 1,
-      name: 'Double Points Monday',
-      description: 'Earn 2x points on all purchases every Monday!',
-      type: 'automatic',
-      startDate: '2025-11-01T00:00:00Z',
-      endDate: '2025-12-31T23:59:59Z',
-      minSpending: 10,
-      rate: 2,
-      points: null
-    },
-    {
-      id: 2,
-      name: 'Welcome Bonus',
-      description: 'Get 500 bonus points when you make your first purchase!',
-      type: 'one-time',
-      startDate: '2025-01-01T00:00:00Z',
-      endDate: '2025-12-31T23:59:59Z',
-      minSpending: 5,
-      rate: null,
-      points: 500
-    },
-    {
-      id: 3,
-      name: 'Holiday Special',
-      description: 'Celebrate the season with 3x points on purchases over $50!',
-      type: 'automatic',
-      startDate: '2025-12-01T00:00:00Z',
-      endDate: '2025-12-25T23:59:59Z',
-      minSpending: 50,
-      rate: 3,
-      points: null
-    },
-    {
-      id: 4,
-      name: 'Referral Reward',
-      description: 'Both you and your friend get 200 points when they sign up!',
-      type: 'one-time',
-      startDate: '2025-11-01T00:00:00Z',
-      endDate: null,
-      minSpending: null,
-      rate: null,
-      points: 200
-    },
-  ]
+  useEffect(() => {
+    loadPromotions()
+  }, [currentPage])
+
+  // ============================================================
+  // TODO: Replace with actual API call
+  // Example:
+  //   const response = await promotionAPI.getAll({
+  //     page: currentPage,
+  //     limit: PAGINATION_DEFAULTS.itemsPerPage
+  //   })
+  // ============================================================
+  const loadPromotions = async () => {
+    setLoading(true)
+    try {
+      await simulateApiDelay(300) // Remove this when using real API
+      
+      // TODO: Replace with actual API call
+      const { data, pagination } = getMockPaginatedData(
+        mockPromotions, 
+        currentPage, 
+        4 // Show 4 per page for card layout
+      )
+      
+      setPromotions(data)
+      setTotalPages(pagination.totalPages)
+      setTotalItems(pagination.totalItems)
+    } catch (error) {
+      console.error('Failed to load promotions:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const isActive = (promo) => {
     const now = new Date()
     const start = new Date(promo.startDate)
     const end = promo.endDate ? new Date(promo.endDate) : null
     return now >= start && (!end || now <= end)
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-2 border-rewardly-blue border-t-transparent" />
+      </div>
+    )
   }
 
   return (
@@ -162,8 +170,8 @@ const PromotionsPage = () => {
 
           <Pagination
             currentPage={currentPage}
-            totalPages={2}
-            totalItems={promotions.length}
+            totalPages={totalPages}
+            totalItems={totalItems}
             itemsPerPage={4}
             onPageChange={setCurrentPage}
           />
@@ -174,4 +182,3 @@ const PromotionsPage = () => {
 }
 
 export default PromotionsPage
-

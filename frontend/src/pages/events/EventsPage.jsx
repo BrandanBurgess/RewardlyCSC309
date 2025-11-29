@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { PageHeader } from '@/components/layout'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -6,64 +6,66 @@ import { Pagination, EmptyState } from '@/components/shared'
 import { Link } from 'react-router-dom'
 import { Calendar, MapPin, Users, Clock, ArrowRight, Coins } from 'lucide-react'
 
+// ============================================================
+// TODO: Replace mock data imports with API calls
+// ============================================================
+import { 
+  mockEvents, 
+  getMockPaginatedData,
+  simulateApiDelay 
+} from '@/mock'
+
 const EventsPage = () => {
   const [currentPage, setCurrentPage] = useState(1)
+  const [loading, setLoading] = useState(true)
+  const [events, setEvents] = useState([])
+  const [totalPages, setTotalPages] = useState(1)
+  const [totalItems, setTotalItems] = useState(0)
 
-  // Mock data - will be replaced with real API calls
-  const events = [
-    {
-      id: 1,
-      name: 'Tech Workshop: React Basics',
-      description: 'Learn the fundamentals of React.js in this hands-on workshop.',
-      location: 'Room BA1234',
-      startTime: '2025-12-01T14:00:00Z',
-      endTime: '2025-12-01T17:00:00Z',
-      capacity: 50,
-      numGuests: 35,
-      pointsRemain: 5000,
-      pointsAwarded: 100,
-      published: true
-    },
-    {
-      id: 2,
-      name: 'Holiday Party',
-      description: 'Celebrate the holiday season with fellow students! Food, games, and prizes.',
-      location: 'Great Hall',
-      startTime: '2025-12-15T18:00:00Z',
-      endTime: '2025-12-15T22:00:00Z',
-      capacity: 200,
-      numGuests: 150,
-      pointsRemain: 10000,
-      pointsAwarded: 50,
-      published: true
-    },
-    {
-      id: 3,
-      name: 'Career Fair',
-      description: 'Meet top employers and explore career opportunities.',
-      location: 'Student Center',
-      startTime: '2025-12-10T10:00:00Z',
-      endTime: '2025-12-10T16:00:00Z',
-      capacity: null,
-      numGuests: 89,
-      pointsRemain: 8000,
-      pointsAwarded: 75,
-      published: true
-    },
-    {
-      id: 4,
-      name: 'Study Group: Finals Prep',
-      description: 'Group study session for final exams. All subjects welcome.',
-      location: 'Library Room 202',
-      startTime: '2025-12-05T13:00:00Z',
-      endTime: '2025-12-05T18:00:00Z',
-      capacity: 30,
-      numGuests: 12,
-      pointsRemain: 1500,
-      pointsAwarded: 30,
-      published: true
-    },
-  ]
+  useEffect(() => {
+    loadEvents()
+  }, [currentPage])
+
+  // ============================================================
+  // TODO: Replace with actual API call
+  // Example:
+  //   const response = await eventAPI.getPublished({
+  //     page: currentPage,
+  //     limit: 4
+  //   })
+  // ============================================================
+  const loadEvents = async () => {
+    setLoading(true)
+    try {
+      await simulateApiDelay(300) // Remove this when using real API
+      
+      // TODO: Replace with actual API call (filter for published only)
+      const publishedEvents = mockEvents.filter(e => e.published)
+      const { data, pagination } = getMockPaginatedData(
+        publishedEvents, 
+        currentPage, 
+        4
+      )
+      
+      setEvents(data)
+      setTotalPages(pagination.totalPages)
+      setTotalItems(pagination.totalItems)
+    } catch (error) {
+      console.error('Failed to load events:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // ============================================================
+  // TODO: Implement RSVP API call
+  // Example:
+  //   await eventAPI.rsvp(eventId)
+  // ============================================================
+  const handleRsvp = async (eventId) => {
+    console.log('TODO: Implement RSVP for event:', eventId)
+    // TODO: Call eventAPI.rsvp(eventId)
+  }
 
   const isUpcoming = (event) => {
     return new Date(event.startTime) > new Date()
@@ -85,6 +87,14 @@ const EventsPage = () => {
       minute: '2-digit',
       hour12: true 
     })
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-2 border-rewardly-blue border-t-transparent" />
+      </div>
+    )
   }
 
   return (
@@ -167,7 +177,7 @@ const EventsPage = () => {
                     </Link>
                     
                     {isUpcoming(event) && (
-                      <Button size="sm">
+                      <Button size="sm" onClick={() => handleRsvp(event.id)}>
                         RSVP
                       </Button>
                     )}
@@ -179,8 +189,8 @@ const EventsPage = () => {
 
           <Pagination
             currentPage={currentPage}
-            totalPages={2}
-            totalItems={events.length}
+            totalPages={totalPages}
+            totalItems={totalItems}
             itemsPerPage={4}
             onPageChange={setCurrentPage}
           />
@@ -191,4 +201,3 @@ const EventsPage = () => {
 }
 
 export default EventsPage
-

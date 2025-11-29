@@ -1,12 +1,26 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { PageHeader } from '@/components/layout'
 import { DataTable } from '@/components/shared'
 import { Link } from 'react-router-dom'
-import { Eye, Filter } from 'lucide-react'
+import { Eye } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+
+// ============================================================
+// TODO: Replace mock data imports with API calls
+// ============================================================
+import { 
+  mockTransactions, 
+  getMockPaginatedData,
+  simulateApiDelay,
+  PAGINATION_DEFAULTS 
+} from '@/mock'
 
 const TransactionsPage = () => {
   const [currentPage, setCurrentPage] = useState(1)
+  const [loading, setLoading] = useState(true)
+  const [transactions, setTransactions] = useState([])
+  const [totalPages, setTotalPages] = useState(1)
+  const [totalItems, setTotalItems] = useState(0)
   const [filters, setFilters] = useState({
     type: '',
     relatedId: '',
@@ -15,14 +29,42 @@ const TransactionsPage = () => {
     operator: 'gte'
   })
 
-  // Mock data - will be replaced with real API calls
-  const transactions = [
-    { id: 1, type: 'purchase', amount: 150, createdBy: 'cashier1', relatedId: 'user123', remark: 'Coffee purchase', createdAt: '2025-11-28T10:30:00Z' },
-    { id: 2, type: 'transfer', amount: -50, createdBy: 'self', relatedId: 'john_doe', remark: 'Sent to friend', createdAt: '2025-11-27T15:45:00Z' },
-    { id: 3, type: 'redemption', amount: -500, createdBy: 'self', relatedId: null, remark: 'Redemption request', createdAt: '2025-11-26T09:00:00Z' },
-    { id: 4, type: 'event', amount: 200, createdBy: 'manager1', relatedId: 'event_42', remark: 'Workshop attendance', createdAt: '2025-11-25T14:00:00Z' },
-    { id: 5, type: 'adjustment', amount: 100, createdBy: 'admin', relatedId: 'tx_99', remark: 'Correction for previous error', createdAt: '2025-11-24T11:30:00Z' },
-  ]
+  useEffect(() => {
+    loadTransactions()
+  }, [currentPage, filters])
+
+  // ============================================================
+  // TODO: Replace with actual API call
+  // Example:
+  //   const response = await transactionAPI.getUserTransactions({
+  //     page: currentPage,
+  //     limit: PAGINATION_DEFAULTS.itemsPerPage,
+  //     type: filters.type,
+  //     relatedId: filters.relatedId,
+  //     ...filters
+  //   })
+  // ============================================================
+  const loadTransactions = async () => {
+    setLoading(true)
+    try {
+      await simulateApiDelay(300) // Remove this when using real API
+      
+      // TODO: Replace with actual API call
+      const { data, pagination } = getMockPaginatedData(
+        mockTransactions, 
+        currentPage, 
+        PAGINATION_DEFAULTS.itemsPerPage
+      )
+      
+      setTransactions(data)
+      setTotalPages(pagination.totalPages)
+      setTotalItems(pagination.totalItems)
+    } catch (error) {
+      console.error('Failed to load transactions:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const getTypeStyles = (type) => {
     const styles = {
@@ -171,13 +213,14 @@ const TransactionsPage = () => {
       <DataTable
         columns={columns}
         data={transactions}
+        loading={loading}
         searchable={true}
         searchPlaceholder="Search transactions..."
         pagination={true}
         currentPage={currentPage}
-        totalPages={3}
-        totalItems={25}
-        itemsPerPage={10}
+        totalPages={totalPages}
+        totalItems={totalItems}
+        itemsPerPage={PAGINATION_DEFAULTS.itemsPerPage}
         onPageChange={setCurrentPage}
         filters={filterPanel}
         emptyMessage="No transactions found"
@@ -187,4 +230,3 @@ const TransactionsPage = () => {
 }
 
 export default TransactionsPage
-

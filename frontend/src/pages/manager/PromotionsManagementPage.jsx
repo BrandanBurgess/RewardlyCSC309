@@ -1,20 +1,79 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { PageHeader } from '@/components/layout'
 import { DataTable } from '@/components/shared'
 import { Button } from '@/components/ui/button'
 import { Link } from 'react-router-dom'
 import { Eye, Plus, Edit2, Trash2, CheckCircle, XCircle } from 'lucide-react'
 
+// ============================================================
+// TODO: Replace mock data imports with API calls
+// ============================================================
+import { 
+  mockPromotions, 
+  getMockPaginatedData,
+  simulateApiDelay,
+  PAGINATION_DEFAULTS 
+} from '@/mock'
+
 const PromotionsManagementPage = () => {
   const [currentPage, setCurrentPage] = useState(1)
+  const [loading, setLoading] = useState(true)
+  const [promotions, setPromotions] = useState([])
+  const [totalPages, setTotalPages] = useState(1)
+  const [totalItems, setTotalItems] = useState(0)
 
-  // Mock data
-  const promotions = [
-    { id: 1, name: 'Double Points Monday', type: 'automatic', rate: 2, points: null, startDate: '2025-11-01', endDate: '2025-12-31', active: true },
-    { id: 2, name: 'Welcome Bonus', type: 'one-time', rate: null, points: 500, startDate: '2025-01-01', endDate: '2025-12-31', active: true },
-    { id: 3, name: 'Holiday Special', type: 'automatic', rate: 3, points: null, startDate: '2025-12-01', endDate: '2025-12-25', active: false },
-    { id: 4, name: 'Referral Reward', type: 'one-time', rate: null, points: 200, startDate: '2025-11-01', endDate: null, active: true },
-  ]
+  useEffect(() => {
+    loadPromotions()
+  }, [currentPage])
+
+  // ============================================================
+  // TODO: Replace with actual API call
+  // Example:
+  //   const response = await promotionAPI.getAll({
+  //     page: currentPage,
+  //     limit: PAGINATION_DEFAULTS.itemsPerPage
+  //   })
+  // ============================================================
+  const loadPromotions = async () => {
+    setLoading(true)
+    try {
+      await simulateApiDelay(300) // Remove this when using real API
+      
+      // TODO: Replace with actual API call
+      const { data, pagination } = getMockPaginatedData(
+        mockPromotions, 
+        currentPage, 
+        PAGINATION_DEFAULTS.itemsPerPage
+      )
+      
+      setPromotions(data)
+      setTotalPages(pagination.totalPages)
+      setTotalItems(pagination.totalItems)
+    } catch (error) {
+      console.error('Failed to load promotions:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // ============================================================
+  // TODO: Implement delete promotion API call
+  // Example:
+  //   await promotionAPI.delete(promotionId)
+  //   loadPromotions() // Reload after delete
+  // ============================================================
+  const handleDelete = async (promotionId) => {
+    if (!confirm('Are you sure you want to delete this promotion?')) return
+    console.log('TODO: Delete promotion:', promotionId)
+    // TODO: Call API and reload
+  }
+
+  const isActive = (promo) => {
+    const now = new Date()
+    const start = new Date(promo.startDate)
+    const end = promo.endDate ? new Date(promo.endDate) : null
+    return now >= start && (!end || now <= end)
+  }
 
   const columns = [
     {
@@ -57,8 +116,8 @@ const PromotionsManagementPage = () => {
     {
       key: 'active',
       label: 'Status',
-      render: (value) => (
-        value ? (
+      render: (_, row) => (
+        isActive(row) ? (
           <span className="flex items-center gap-1 text-green-600">
             <CheckCircle className="h-4 w-4" /> Active
           </span>
@@ -85,7 +144,12 @@ const PromotionsManagementPage = () => {
               <Edit2 className="h-4 w-4" />
             </Button>
           </Link>
-          <Button variant="ghost" size="sm" className="text-red-500 hover:text-red-700">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="text-red-500 hover:text-red-700"
+            onClick={() => handleDelete(row.id)}
+          >
             <Trash2 className="h-4 w-4" />
           </Button>
         </div>
@@ -116,13 +180,14 @@ const PromotionsManagementPage = () => {
       <DataTable
         columns={columns}
         data={promotions}
+        loading={loading}
         searchable={true}
         searchPlaceholder="Search promotions..."
         pagination={true}
         currentPage={currentPage}
-        totalPages={2}
-        totalItems={promotions.length}
-        itemsPerPage={10}
+        totalPages={totalPages}
+        totalItems={totalItems}
+        itemsPerPage={PAGINATION_DEFAULTS.itemsPerPage}
         onPageChange={setCurrentPage}
         emptyMessage="No promotions found"
       />
@@ -131,4 +196,3 @@ const PromotionsManagementPage = () => {
 }
 
 export default PromotionsManagementPage
-

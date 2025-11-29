@@ -1,25 +1,94 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { PageHeader } from '@/components/layout'
 import { DataTable } from '@/components/shared'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { ShieldCheck, UserCog, AlertCircle, CheckCircle } from 'lucide-react'
 
+// ============================================================
+// TODO: Replace mock data imports with API calls
+// ============================================================
+import { 
+  mockUsers, 
+  getMockPaginatedData,
+  simulateApiDelay,
+  PAGINATION_DEFAULTS 
+} from '@/mock'
+
 const UserRolesPage = () => {
   const [currentPage, setCurrentPage] = useState(1)
+  const [loading, setLoading] = useState(true)
+  const [users, setUsers] = useState([])
+  const [totalPages, setTotalPages] = useState(1)
+  const [totalItems, setTotalItems] = useState(0)
   const [selectedUser, setSelectedUser] = useState(null)
   const [newRole, setNewRole] = useState('')
-  const [loading, setLoading] = useState(false)
+  const [updating, setUpdating] = useState(false)
   const [success, setSuccess] = useState(false)
 
-  // Mock data
-  const users = [
-    { id: 1, utorid: 'john_doe', name: 'John Doe', email: 'john@example.com', role: 'regular' },
-    { id: 2, utorid: 'jane_smith', name: 'Jane Smith', email: 'jane@example.com', role: 'cashier' },
-    { id: 3, utorid: 'bob_wilson', name: 'Bob Wilson', email: 'bob@example.com', role: 'regular' },
-    { id: 4, utorid: 'alice_johnson', name: 'Alice Johnson', email: 'alice@example.com', role: 'manager' },
-    { id: 5, utorid: 'charlie_brown', name: 'Charlie Brown', email: 'charlie@example.com', role: 'regular' },
-  ]
+  useEffect(() => {
+    loadUsers()
+  }, [currentPage])
+
+  // ============================================================
+  // TODO: Replace with actual API call
+  // Example:
+  //   const response = await userAPI.getAll({
+  //     page: currentPage,
+  //     limit: PAGINATION_DEFAULTS.itemsPerPage
+  //   })
+  // ============================================================
+  const loadUsers = async () => {
+    setLoading(true)
+    try {
+      await simulateApiDelay(300) // Remove this when using real API
+      
+      // TODO: Replace with actual API call
+      const { data, pagination } = getMockPaginatedData(
+        mockUsers, 
+        currentPage, 
+        PAGINATION_DEFAULTS.itemsPerPage
+      )
+      
+      setUsers(data)
+      setTotalPages(pagination.totalPages)
+      setTotalItems(pagination.totalItems)
+    } catch (error) {
+      console.error('Failed to load users:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // ============================================================
+  // TODO: Replace with actual API call
+  // Example:
+  //   await userAPI.updateRole(selectedUser.id, newRole)
+  //   loadUsers() // Reload after update
+  // ============================================================
+  const handlePromote = async () => {
+    if (!selectedUser || !newRole) return
+    
+    setUpdating(true)
+    try {
+      await simulateApiDelay(1000) // Remove this when using real API
+      
+      // TODO: Replace with actual API call
+      console.log('TODO: Update user role:', selectedUser.id, newRole)
+      
+      setSuccess(true)
+      setTimeout(() => {
+        setSelectedUser(null)
+        setNewRole('')
+        setSuccess(false)
+        loadUsers() // Reload to show updated data
+      }, 2000)
+    } catch (err) {
+      console.error('Failed to update role:', err)
+    } finally {
+      setUpdating(false)
+    }
+  }
 
   const getRoleStyles = (role) => {
     const styles = {
@@ -29,26 +98,6 @@ const UserRolesPage = () => {
       superuser: 'bg-red-100 text-red-700',
     }
     return styles[role] || styles.regular
-  }
-
-  const handlePromote = async () => {
-    if (!selectedUser || !newRole) return
-    
-    setLoading(true)
-    try {
-      // TODO: API call to promote user
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      setSuccess(true)
-      setTimeout(() => {
-        setSelectedUser(null)
-        setNewRole('')
-        setSuccess(false)
-      }, 2000)
-    } catch (err) {
-      console.error(err)
-    } finally {
-      setLoading(false)
-    }
   }
 
   const columns = [
@@ -119,13 +168,14 @@ const UserRolesPage = () => {
           <DataTable
             columns={columns}
             data={users}
+            loading={loading}
             searchable={true}
             searchPlaceholder="Search by name or UTORid..."
             pagination={true}
             currentPage={currentPage}
-            totalPages={2}
-            totalItems={users.length}
-            itemsPerPage={10}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            itemsPerPage={PAGINATION_DEFAULTS.itemsPerPage}
             onPageChange={setCurrentPage}
             emptyMessage="No users found"
           />
@@ -173,7 +223,7 @@ const UserRolesPage = () => {
                     value={newRole}
                     onChange={(e) => setNewRole(e.target.value)}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rewardly-blue focus:border-transparent"
-                    disabled={loading}
+                    disabled={updating}
                   >
                     <option value="">Select a role...</option>
                     <option value="regular">Regular User</option>
@@ -197,16 +247,16 @@ const UserRolesPage = () => {
                     variant="outline" 
                     className="flex-1"
                     onClick={() => setSelectedUser(null)}
-                    disabled={loading}
+                    disabled={updating}
                   >
                     Cancel
                   </Button>
                   <Button 
                     className="flex-1"
                     onClick={handlePromote}
-                    disabled={loading || !newRole || newRole === selectedUser.role}
+                    disabled={updating || !newRole || newRole === selectedUser.role}
                   >
-                    {loading ? 'Updating...' : 'Update Role'}
+                    {updating ? 'Updating...' : 'Update Role'}
                   </Button>
                 </div>
               </div>
@@ -219,4 +269,3 @@ const UserRolesPage = () => {
 }
 
 export default UserRolesPage
-

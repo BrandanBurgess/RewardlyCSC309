@@ -1,24 +1,43 @@
+import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { PageHeader } from '@/components/layout'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft, User, Calendar, Hash, FileText, Tag, AlertTriangle } from 'lucide-react'
 
+// ============================================================
+// TODO: Replace mock data imports with API calls
+// ============================================================
+import { mockTransactions, simulateApiDelay } from '@/mock'
+
 const TransactionDetail = () => {
   const { id } = useParams()
+  const [loading, setLoading] = useState(true)
+  const [transaction, setTransaction] = useState(null)
 
-  // Mock data - will be replaced with real API call
-  const transaction = {
-    id: parseInt(id),
-    type: 'purchase',
-    amount: 150,
-    spent: 15.00,
-    createdBy: 'cashier1',
-    relatedId: 'user123',
-    promotionIds: [1, 2],
-    remark: 'Coffee purchase at campus cafe',
-    suspicious: false,
-    createdAt: '2025-11-28T10:30:00Z'
+  useEffect(() => {
+    loadTransaction()
+  }, [id])
+
+  // ============================================================
+  // TODO: Replace with actual API call
+  // Example:
+  //   const response = await transactionAPI.getById(id)
+  //   setTransaction(response)
+  // ============================================================
+  const loadTransaction = async () => {
+    setLoading(true)
+    try {
+      await simulateApiDelay(300) // Remove this when using real API
+      
+      // TODO: Replace with actual API call
+      const found = mockTransactions.find(t => t.id === parseInt(id))
+      setTransaction(found || null)
+    } catch (error) {
+      console.error('Failed to load transaction:', error)
+    } finally {
+      setLoading(false)
+    }
   }
 
   const getTypeStyles = (type) => {
@@ -30,6 +49,25 @@ const TransactionDetail = () => {
       adjustment: 'bg-gray-100 text-gray-700',
     }
     return styles[type] || styles.adjustment
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-2 border-rewardly-blue border-t-transparent" />
+      </div>
+    )
+  }
+
+  if (!transaction) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-gray-500">Transaction not found</p>
+        <Link to="/transactions">
+          <Button variant="outline" className="mt-4">Back to Transactions</Button>
+        </Link>
+      </div>
+    )
   }
 
   return (
@@ -175,4 +213,3 @@ const TransactionDetail = () => {
 }
 
 export default TransactionDetail
-
