@@ -17,11 +17,13 @@ const sgMail = require('@sendgrid/mail');
  */
 
 // Initialize SendGrid with API key
-sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+sgMail.setApiKey('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');
+
+// process.env.SENDGRID_API_KEY
 
 // Email sender configuration
 // Use your verified sender email from SendGrid
-const FROM_EMAIL = process.env.FROM_EMAIL || 'noreply@rewardly.app';
+const FROM_EMAIL = process.env.FROM_EMAIL || 'chriltonyt@gmail.com';
 const FROM_NAME = 'Rewardly';
 
 /**
