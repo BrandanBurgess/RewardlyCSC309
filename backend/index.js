@@ -28,6 +28,9 @@ const rateLimit = require("express-rate-limit");
 const { bootstrap } = require('./src/utils/bootstrap');
 const app = express();
 
+// Express: Trust first proxy (Railway) for correct client IP detection
+app.set('trust proxy', 1);
+
 // Security headers (XSS protection, clickjacking prevention, etc.)
 app.use(helmet());
 

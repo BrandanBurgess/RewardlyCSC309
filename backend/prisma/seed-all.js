@@ -37,24 +37,24 @@ const DEFAULT_PASSWORD = 'pass';  // Simple password for all test accounts
 // ============================================================================
 const USERS = [
   // Superuser
-  { username: 'admin', email: 'admin@test.com', name: 'Admin User', role: 'superuser', points: 0 },
+  { username: 'admin', email: 'admin.user@mail.utoronto.ca', name: 'Admin User', role: 'superuser', points: 0 },
   
   // Managers
-  { username: 'manager1', email: 'manager1@test.com', name: 'Alice Manager', role: 'manager', points: 500 },
-  { username: 'manager2', email: 'manager2@test.com', name: 'Bob Manager', role: 'manager', points: 300 },
+  { username: 'manager1', email: 'alice.manager@mail.utoronto.ca', name: 'Alice Manager', role: 'manager', points: 500 },
+  { username: 'manager2', email: 'bob.manager@mail.utoronto.ca', name: 'Bob Manager', role: 'manager', points: 300 },
   
   // Cashiers
-  { username: 'cashier1', email: 'cashier1@test.com', name: 'Carol Cashier', role: 'cashier', points: 200 },
-  { username: 'cashier2', email: 'cashier2@test.com', name: 'Dave Cashier', role: 'cashier', points: 150 },
+  { username: 'cashier1', email: 'carol.cashier@mail.utoronto.ca', name: 'Carol Cashier', role: 'cashier', points: 200 },
+  { username: 'cashier2', email: 'dave.cashier@mail.utoronto.ca', name: 'Dave Cashier', role: 'cashier', points: 150 },
   
   // Regular users with varying point balances
-  { username: 'user1', email: 'user1@test.com', name: 'Emma Wilson', role: 'regular', points: 5000 },
-  { username: 'user2', email: 'user2@test.com', name: 'Frank Chen', role: 'regular', points: 3500 },
-  { username: 'user3', email: 'user3@test.com', name: 'Grace Kim', role: 'regular', points: 2000 },
-  { username: 'user4', email: 'user4@test.com', name: 'Henry Davis', role: 'regular', points: 1500 },
-  { username: 'user5', email: 'user5@test.com', name: 'Ivy Johnson', role: 'regular', points: 800 },
-  { username: 'user6', email: 'user6@test.com', name: 'Jack Smith', role: 'regular', points: 250 },
-  { username: 'user7', email: 'user7@test.com', name: 'Kate Brown', role: 'regular', points: 100 },
+  { username: 'user1', email: 'emma.wilson@mail.utoronto.ca', name: 'Emma Wilson', role: 'regular', points: 5000 },
+  { username: 'user2', email: 'frank.chen@mail.utoronto.ca', name: 'Frank Chen', role: 'regular', points: 3500 },
+  { username: 'user3', email: 'grace.kim@mail.utoronto.ca', name: 'Grace Kim', role: 'regular', points: 2000 },
+  { username: 'user4', email: 'henry.davis@mail.utoronto.ca', name: 'Henry Davis', role: 'regular', points: 1500 },
+  { username: 'user5', email: 'ivy.johnson@mail.utoronto.ca', name: 'Ivy Johnson', role: 'regular', points: 800 },
+  { username: 'user6', email: 'jack.smith@mail.utoronto.ca', name: 'Jack Smith', role: 'regular', points: 250 },
+  { username: 'user7', email: 'kate.brown@mail.utoronto.ca', name: 'Kate Brown', role: 'regular', points: 100 },
 ];
 
 // ============================================================================
@@ -846,24 +846,24 @@ function printSummary(users, events, promotions) {
   console.log('║                    ✅ SEED COMPLETED!                          ║');
   console.log('╚════════════════════════════════════════════════════════════════╝');
   console.log('');
-  console.log('┌────────────────────────────────────────────────────────────────┐');
-  console.log('│ 🔑 LOGIN CREDENTIALS (Password for ALL accounts: pass)        │');
-  console.log('├────────────────────────────────────────────────────────────────┤');
-  console.log('│ Role        │ Username   │ Email                │ Points      │');
-  console.log('├─────────────┼────────────┼──────────────────────┼─────────────┤');
-  console.log('│ SUPERUSER   │ admin      │ admin@test.com       │ 0           │');
-  console.log('│ MANAGER     │ manager1   │ manager1@test.com    │ 500         │');
-  console.log('│ MANAGER     │ manager2   │ manager2@test.com    │ 300         │');
-  console.log('│ CASHIER     │ cashier1   │ cashier1@test.com    │ 200         │');
-  console.log('│ CASHIER     │ cashier2   │ cashier2@test.com    │ 150         │');
-  console.log('│ REGULAR     │ user1      │ user1@test.com       │ 5000        │');
-  console.log('│ REGULAR     │ user2      │ user2@test.com       │ 3500        │');
-  console.log('│ REGULAR     │ user3      │ user3@test.com       │ 2000        │');
-  console.log('│ REGULAR     │ user4      │ user4@test.com       │ 1500        │');
-  console.log('│ REGULAR     │ user5      │ user5@test.com       │ 800         │');
-  console.log('│ REGULAR     │ user6      │ user6@test.com       │ 250         │');
-  console.log('│ REGULAR     │ user7*     │ user7@test.com       │ 100         │');
-  console.log('└─────────────┴────────────┴──────────────────────┴─────────────┘');
+  console.log('┌──────────────────────────────────────────────────────────────────────────────┐');
+  console.log('│ 🔑 LOGIN CREDENTIALS (Password for ALL accounts: pass)                      │');
+  console.log('├──────────────────────────────────────────────────────────────────────────────┤');
+  console.log('│ Role        │ Username   │ Email                              │ Points      │');
+  console.log('├─────────────┼────────────┼────────────────────────────────────┼─────────────┤');
+  console.log('│ SUPERUSER   │ admin      │ admin.user@mail.utoronto.ca        │ 0           │');
+  console.log('│ MANAGER     │ manager1   │ alice.manager@mail.utoronto.ca     │ 500         │');
+  console.log('│ MANAGER     │ manager2   │ bob.manager@mail.utoronto.ca       │ 300         │');
+  console.log('│ CASHIER     │ cashier1   │ carol.cashier@mail.utoronto.ca     │ 200         │');
+  console.log('│ CASHIER     │ cashier2   │ dave.cashier@mail.utoronto.ca      │ 150         │');
+  console.log('│ REGULAR     │ user1      │ emma.wilson@mail.utoronto.ca       │ 5000        │');
+  console.log('│ REGULAR     │ user2      │ frank.chen@mail.utoronto.ca        │ 3500        │');
+  console.log('│ REGULAR     │ user3      │ grace.kim@mail.utoronto.ca         │ 2000        │');
+  console.log('│ REGULAR     │ user4      │ henry.davis@mail.utoronto.ca       │ 1500        │');
+  console.log('│ REGULAR     │ user5      │ ivy.johnson@mail.utoronto.ca       │ 800         │');
+  console.log('│ REGULAR     │ user6      │ jack.smith@mail.utoronto.ca        │ 250         │');
+  console.log('│ REGULAR     │ user7*     │ kate.brown@mail.utoronto.ca        │ 100         │');
+  console.log('└─────────────┴────────────┴────────────────────────────────────┴─────────────┘');
   console.log('  * user7 is marked as suspicious for testing');
   console.log('');
   console.log('┌────────────────────────────────────────────────────────────────┐');
