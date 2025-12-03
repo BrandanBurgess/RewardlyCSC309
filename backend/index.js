@@ -1,6 +1,9 @@
 #!/usr/bin/env node
 'use strict';
 
+// Load environment variables from .env file
+require('dotenv').config();
+
 const port = (() => {
     // Use PORT env var (Railway/production), command line arg, or default to 3000
     if (process.env.PORT) {
